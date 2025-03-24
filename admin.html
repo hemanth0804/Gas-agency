@@ -153,6 +153,7 @@
                             <th>Phone</th>
                             <th>Address</th>
                             <th>Cylinder Type</th>
+                            <th>Payment</th>
                             <th>Timestamp</th>
                         </tr>
                     </thead>
@@ -166,6 +167,7 @@
                         <td>${booking.phone || "N/A"}</td>
                         <td>${booking.address || "N/A"}</td>
                         <td>${booking.cylinderType || "N/A"}</td>
+                        <td>${booking.paymentMethod || "N/A"}</td>
                         <td>${booking.timestamp ? new Date(booking.timestamp).toLocaleString() : "N/A"}</td>
                     </tr>`;
                     });
@@ -200,6 +202,7 @@
                     <th>Phone</th>
                     <th>Address</th>
                     <th>Requested Cylinders</th>
+                    <th>Payment</th>
                     <th>Status</th>
                     <th>Actions</th>
                 </tr>
@@ -214,6 +217,7 @@
                 <td>${request.phone || "N/A"}</td>
                 <td>${request.address || "N/A"}</td>
                 <td>${request.cylinderType || "N/A"}</td>
+                <td>${request.paymentMethod || "N/A"}</td>
                 <td id="status-${requestId}">${request.status || "Pending"}</td>
                 <td>
                     <button onclick="updateRequestStatus('${requestId}', 'Accepted')">Accept</button>
