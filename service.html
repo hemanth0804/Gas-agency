@@ -43,13 +43,22 @@
             <label for="cylinderType">Cylinder Type:</label>
             <select id="cylinderType" name="cylinderType" required>
                 <option value="">Select Type</option>
-                <option value="domestic">Domestic</option>
-                <option value="commercial">Commercial</option>
+                <option value="domestic">Domestic - ₹850</option>
+                <option value="commercial">Commercial - ₹1600</option>
             </select>
 
-            <button type="submit">Book Now</button>
+            <!-- Payment Section -->
+            <label for="paymentMethod">Payment Method:</label>
+            <select id="paymentMethod" name="paymentMethod" required>
+                <option value="">Select Payment Method</option>
+                <option value="upi">UPI</option>
+                <option value="cod">Cash on Delivery</option>
+            </select>
+
+            <button type="submit">Proceed to Payment</button>
         </form>
     </div>
+
 
     <footer>
         <div class="contact">
@@ -68,13 +77,21 @@
             <img src="image/prometeo flame logo-Photoroom.png">
             <div class="logotext">Gas <span style="color: #ed6a1c;">Agency</span></div>
         </div>
+        <div id="qrPopup" class="popup">
+            <div class="popup-content">
+                <span class="close-btn" onclick="closePopup()">&times;</span>
+                <h3>Scan QR to Pay</h3>
+                <img src="image/WhatsApp Image 2024-12-21 at 19.55.46_9ea0ca1a.jpg" alt="UPI QR Code" class="qr-image">
+                <p>Scan the QR code to complete your payment.</p>
+            </div>
+        </div>
     </footer>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
         import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-auth.js";
         import { getDatabase, ref, push, get, update } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-database.js";
-
+    
         const firebaseConfig = {
             apiKey: "AIzaSyC1bpgvaS42i2C7sibadQifyiKOXEHQGSY",
             authDomain: "gas-agency-d745d.firebaseapp.com",
@@ -84,16 +101,16 @@
             messagingSenderId: "593463958008",
             appId: "1:593463958008:web:9e3889a577a4172c149e0d"
         };
-
+    
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const database = getDatabase(app);
-
+    
         // Function to fetch and display remaining cylinders
         async function updateRemainingCylinders(userId) {
             const currentYear = new Date().getFullYear();
             const userBookingRef = ref(database, `userBookings/${userId}/${currentYear}`);
-
+    
             try {
                 const snapshot = await get(userBookingRef);
                 let bookingCount = snapshot.exists() ? snapshot.val().count : 0;
@@ -104,7 +121,7 @@
                 document.getElementById("remainingCylinders").innerText = "Error";
             }
         }
-
+    
         // Logout functionality
         document.getElementById("logoutBtn").addEventListener("click", () => {
             signOut(auth).then(() => {
@@ -114,10 +131,11 @@
                 console.error("Logout Error:", error);
             });
         });
+    
         // Fetch user details from the database and auto-fill the form
         async function fetchUserDetails(userId) {
             const userRef = ref(database, `users/${userId}`);
-
+    
             try {
                 const snapshot = await get(userRef);
                 if (snapshot.exists()) {
@@ -125,7 +143,7 @@
                     document.getElementById("consumerId").value = userData.gasId || "";
                     document.getElementById("name").value = userData.name || "";
                     document.getElementById("phone").value = userData.phone || "";
-
+    
                     // Optionally, make the fields read-only
                     document.getElementById("consumerId").readOnly = true;
                     document.getElementById("phone").readOnly = true;
@@ -136,7 +154,7 @@
                 console.error("Error fetching user details:", error);
             }
         }
-
+    
         // Authentication State Check
         onAuthStateChanged(auth, (user) => {
             if (user) {
@@ -147,8 +165,28 @@
                 window.location.href = "index.html";
             }
         });
-
-
+    
+        // Payment method handling
+        document.getElementById("paymentMethod").addEventListener("change", function () {
+            const paymentMethod = this.value;
+            if (paymentMethod === "upi") {
+                document.getElementById("qrPopup").style.display = "flex";
+            }
+        });
+    
+        // Function to close QR popup
+        function closePopup() {
+            document.getElementById("qrPopup").style.display = "none";
+        }
+    
+        // Close popup when clicking outside it
+        window.onclick = function (event) {
+            let popup = document.getElementById("qrPopup");
+            if (event.target === popup) {
+                popup.style.display = "none";
+            }
+        };
+    
         // Booking Form Submission
         document.getElementById("bookingForm").addEventListener("submit", async (event) => {
             event.preventDefault();
@@ -157,26 +195,27 @@
                 alert("Please log in first.");
                 return;
             }
-
+    
             const userId = user.uid;
             const consumerId = document.getElementById("consumerId").value.trim();
             const name = document.getElementById("name").value.trim();
             const phone = document.getElementById("phone").value.trim();
             const address = document.getElementById("address").value.trim();
             const cylinderType = document.getElementById("cylinderType").value;
-
-            if (!consumerId || !name || !phone || !address || !cylinderType) {
+            const paymentMethod = document.getElementById("paymentMethod").value;
+    
+            if (!consumerId || !name || !phone || !address || !cylinderType || !paymentMethod) {
                 alert("Please fill all the fields before submitting.");
                 return;
             }
-
+    
             const currentYear = new Date().getFullYear();
             const userBookingRef = ref(database, `userBookings/${userId}/${currentYear}`);
-
+    
             try {
                 const snapshot = await get(userBookingRef);
                 let bookingCount = snapshot.exists() ? snapshot.val().count : 0;
-
+    
                 if (bookingCount >= 12) {
                     const requestRef = ref(database, "extraBookingRequests");
                     await push(requestRef, {
@@ -186,13 +225,14 @@
                         phone,
                         address,
                         cylinderType,
+                        paymentMethod,
                         timestamp: new Date().toISOString(),
                         status: "pending"
                     });
                     alert("Booking limit reached. A request has been sent to the admin.");
                     return;
                 }
-
+    
                 // Proceed with booking
                 const bookingRef = ref(database, "bookings");
                 await push(bookingRef, {
@@ -202,12 +242,13 @@
                     phone,
                     address,
                     cylinderType,
+                    paymentMethod,
                     timestamp: new Date().toISOString()
                 });
-
+    
                 // Update booking count
                 await update(userBookingRef, { count: bookingCount + 1 });
-
+    
                 alert("Booking Successful!");
                 document.getElementById("bookingForm").reset();
                 updateRemainingCylinders(userId); // Update remaining cylinders after booking
@@ -215,8 +256,8 @@
                 console.error("Booking Error:", error);
             }
         });
-
     </script>
+    
 
 
 </body>
