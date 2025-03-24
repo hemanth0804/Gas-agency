@@ -319,40 +319,40 @@
             }
 
             // Ensure the page doesn't load until authentication is verified
-document.body.style.display = "none";
+            document.body.style.display = "none";
 
-if (window.location.pathname.includes("admin.html")) {
-    const userRole = sessionStorage.getItem("userRole");
+            if (window.location.pathname.includes("admin.html")) {
+                const userRole = sessionStorage.getItem("userRole");
 
-    // Immediate check using session storage
-    if (userRole !== "admin") {
-        alert("Unauthorized Access! Redirecting to Dashboard.");
-        document.body.style.display = "block";  
-        window.location.href = "dashboard.html";
-    }
+                // Immediate check using session storage
+                if (userRole !== "admin") {
+                    alert("Unauthorized Access! Redirecting to Dashboard.");
+                    document.body.style.display = "block";
+                    window.location.href = "dashboard.html";
+                }
 
-    // Secure check with Firebase
-    onAuthStateChanged(auth, async (user) => {
-        if (!user) {
-            alert("Please log in first.");
-            document.body.style.display = "block";  
-            window.location.href = "index.html";
-        } else {
-            const userDoc = await getDoc(doc(firestore, "users", user.uid));
-            if (!userDoc.exists() || userDoc.data().role !== "admin") {
-                alert("Unauthorized Access! Redirecting to Dashboard.");
-                document.body.style.display = "block"; 
-                window.location.href = "dashboard.html";
+                // Secure check with Firebase
+                onAuthStateChanged(auth, async (user) => {
+                    if (!user) {
+                        alert("Please log in first.");
+                        document.body.style.display = "block";
+                        window.location.href = "index.html";
+                    } else {
+                        const userDoc = await getDoc(doc(firestore, "users", user.uid));
+                        if (!userDoc.exists() || userDoc.data().role !== "admin") {
+                            alert("Unauthorized Access! Redirecting to Dashboard.");
+                            document.body.style.display = "block";
+                            window.location.href = "dashboard.html";
+                        } else {
+                            // If the user is verified as admin, show the page content
+                            document.body.style.display = "block";
+                        }
+                    }
+                });
             } else {
-                // If the user is verified as admin, show the page content
+                // If not on the admin page, ensure the body is visible
                 document.body.style.display = "block";
             }
-        }
-    });
-} else {
-    // If not on the admin page, ensure the body is visible
-    document.body.style.display = "block";
-}
 
 
         });

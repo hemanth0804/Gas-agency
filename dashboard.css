@@ -118,3 +118,71 @@ text-align: center;
 .bookinghistory tbody tr:hover {
     background-color: #f9f9f9;
 }
+/* Booking Requests Styling */
+.bookingrequests {
+    padding: 15px;
+    background: #ffffff;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    margin-top: 20px;
+    box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.bookingrequests .heading {
+    font-size: 20px;
+    font-weight: bold;
+    margin-bottom: 10px;
+    color: #ed6a1c;
+    text-align: center;
+}
+
+.bookingrequests table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+.bookingrequests th,
+.bookingrequests td {
+    border: 1px solid #ddd;
+    padding: 12px;
+    text-align: left;
+}
+
+.bookingrequests th {
+    background-color: #f4f4f4;
+    font-weight: bold;
+}
+
+.bookingrequests tbody tr:nth-child(even) {
+    background-color: #fafafa;
+}
+
+.bookingrequests tbody tr:hover {
+    background-color: #f9f9f9;
+}
+
+/* Accept & Reject Button Styles */
+.bookingrequests button {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 5px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.bookingrequests button:hover {
+    opacity: 0.8;
+}
+
+.bookingrequests button:first-child {
+    background-color: #28a745;
+    color: white;
+    margin-right: 5px;
+}
+
+.bookingrequests button:last-child {
+    background-color: #dc3545;
+    color: white;
+}

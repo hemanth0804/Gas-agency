@@ -12,7 +12,7 @@
     <!-- Navbar -->
     <nav class="navbar">
         <div class="logo">
-            <img src="image/prometeo flame logo-Photoroom.png">
+            <img src="image/prometeo flame logo-Photoroom.png" alt="Gas Agency Logo">
             <div class="logotext">Gas <span style="color: #ed6a1c;">Agency</span></div>
         </div>
         <div id="navLinks">
@@ -27,7 +27,7 @@
     <!-- User Info & Input Form -->
     <div class="container">
         <div class="username">
-            <img src="image/profile.png">
+            <img src="image/profile.png" alt="Profile">
             <p id="userEmail">Loading...</p>
         </div>
         <div class="gasid">
@@ -55,20 +55,40 @@
             </thead>
             <tbody>
                 <tr>
-                    <td colspan="7">Loading...</td>
+                    <td colspan="6">Loading...</td>
                 </tr>
             </tbody>
         </table>
     </div>
-    
+
+    <!-- Booking Requests -->
+    <div class="bookingrequests" id="bookingrequests">
+        <div class="heading">Booking Requests</div>
+        <table id="requestTable">
+            <thead>
+                <tr>
+                    <th>Consumer ID</th>
+                    <th>Name</th>
+                    <th>Phone</th>
+                    <th>Address</th>
+                    <th>Cylinder Type</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td colspan="6">Loading...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
 
     <!-- Firebase Script -->
     <script type="module">
-        // Import Firebase Modules
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-auth.js";
-        import { getDatabase, ref, update, get } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-database.js";
-
+        import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-database.js";
+    
         // Firebase Configuration
         const firebaseConfig = {
             apiKey: "AIzaSyC1bpgvaS42i2C7sibadQifyiKOXEHQGSY",
@@ -79,12 +99,12 @@
             messagingSenderId: "593463958008",
             appId: "1:593463958008:web:9e3889a577a4172c149e0d"
         };
-
+    
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const database = getDatabase(app);
-
+    
         document.addEventListener("DOMContentLoaded", () => {
             const gasIdInput = document.getElementById("gasIdInput");
             const phoneInput = document.getElementById("phoneInput");
@@ -92,24 +112,26 @@
             const logoutBtn = document.getElementById("logoutBtn");
             const userEmailDisplay = document.getElementById("userEmail");
             const historyTableBody = document.querySelector("#historyTable tbody");
-
+            const requestTableBody = document.querySelector("#requestTable tbody");
+    
             let currentUser = null;
-
+    
             onAuthStateChanged(auth, async (user) => {
                 if (user) {
                     currentUser = user;
                     userEmailDisplay.innerText = user.displayName || user.email;
-
+    
                     try {
                         const userRef = ref(database, `users/${user.uid}`);
                         const snapshot = await get(userRef);
-
+    
                         if (snapshot.exists()) {
                             const userData = snapshot.val();
                             if (userData.gasId) {
                                 gasIdInput.value = userData.gasId;
                                 gasIdInput.disabled = true;
                                 fetchBookings(userData.gasId);
+                                fetchBookingRequests(userData.gasId); // Pass gasId
                             }
                             if (userData.phone) {
                                 phoneInput.value = userData.phone;
@@ -124,85 +146,99 @@
                     window.location.href = "index.html";
                 }
             });
-
+    
             async function fetchBookings(gasId) {
                 try {
                     const bookingsRef = ref(database, "bookings");
                     const snapshot = await get(bookingsRef);
-
-                    if (!snapshot.exists()) {
-                        historyTableBody.innerHTML = "<tr><td colspan='6'>No bookings found</td></tr>";
-                        return;
+                    let allBookings = [];
+    
+                    if (snapshot.exists()) {
+                        allBookings = Object.values(snapshot.val()).filter(booking => booking?.consumerId === gasId);
                     }
-
-                    const bookingsData = snapshot.val();
-                    const userBookings = Object.values(bookingsData).filter(booking => booking.consumerId === gasId);
-
-                    displayBookingHistory(userBookings);
+    
+                    displayBookingHistory(allBookings);
                 } catch (error) {
                     console.error("Error fetching booking history:", error);
                 }
             }
-
+    
+            async function fetchBookingRequests(gasId) {
+                try {
+                    const requestsRef = ref(database, "extraBookingRequests");
+                    const snapshot = await get(requestsRef);
+                    let requests = [];
+    
+                    if (snapshot.exists()) {
+                        requests = Object.entries(snapshot.val())
+                            .map(([id, data]) => ({ id, ...data }))
+                            .filter(request => request.consumerId === gasId); // Filter by logged-in user's gasId
+                    }
+    
+                    displayBookingRequests(requests);
+                } catch (error) {
+                    console.error("Error fetching booking requests:", error);
+                }
+            }
+    
+            if (logoutBtn) {
+                logoutBtn.addEventListener("click", async () => {
+                    try {
+                        await signOut(auth);
+                        console.log("User logged out successfully.");
+                        window.location.href = "index.html";
+                    } catch (error) {
+                        console.error("Logout failed:", error);
+                    }
+                });
+            } else {
+                console.error("Logout button not found in the DOM.");
+            }
+    
             function displayBookingHistory(bookings) {
                 historyTableBody.innerHTML = "";
-                if (bookings.length === 0) {
+    
+                if (!bookings.length) {
                     historyTableBody.innerHTML = "<tr><td colspan='6'>No bookings found</td></tr>";
                     return;
                 }
+    
                 bookings.forEach(booking => {
                     const row = document.createElement("tr");
                     row.innerHTML = `
-                <td>${booking.consumerId || "N/A"}</td>
-                <td>${booking.name || "N/A"}</td>
-                <td>${booking.phone || "N/A"}</td>
-                <td>${booking.address || "N/A"}</td>
-                <td>${booking.cylinderType || "N/A"}</td>
-                <td>${booking.timestamp ? new Date(booking.timestamp).toLocaleString() : "N/A"}</td>
-            `;
+                        <td>${booking.consumerId || "N/A"}</td>
+                        <td>${booking.name || "N/A"}</td>
+                        <td>${booking.phone || "N/A"}</td>
+                        <td>${booking.address || "N/A"}</td>
+                        <td>${booking.cylinderType || "N/A"}</td>
+                        <td>${booking.timestamp ? new Date(booking.timestamp).toLocaleString() : "N/A"}</td>
+                    `;
                     historyTableBody.appendChild(row);
                 });
             }
-
-            submitBtn.addEventListener("click", () => {
-                if (currentUser) {
-                    const gasId = gasIdInput.value.trim();
-                    const phone = phoneInput.value.trim();
-
-                    if (!gasId || !phone) {
-                        alert("Please fill in both fields.");
-                        return;
-                    }
-
-                    update(ref(database, `users/${currentUser.uid}`), { gasId, phone })
-                        .then(() => {
-                            alert("Details saved successfully!");
-                            gasIdInput.disabled = true;
-                            phoneInput.disabled = true;
-                            submitBtn.disabled = true;
-                            fetchBookings(gasId);
-                        })
-                        .catch(error => {
-                            console.error("Error saving data:", error);
-                            alert("Error saving data. Please try again.");
-                        });
+    
+            function displayBookingRequests(requests) {
+                requestTableBody.innerHTML = "";
+    
+                if (!requests.length) {
+                    requestTableBody.innerHTML = "<tr><td colspan='6'>No booking requests found</td></tr>";
+                    return;
                 }
-            });
-
-            logoutBtn.addEventListener("click", () => {
-                signOut(auth)
-                    .then(() => {
-                        alert("Logged out successfully!");
-                        window.location.href = "index.html";
-                    })
-                    .catch(error => {
-                        console.error("Logout Error:", error);
-                        alert("Error logging out. Please try again.");
-                    });
-            });
+    
+                requests.forEach(request => {
+                    const row = document.createElement("tr");
+                    row.innerHTML = `
+                        <td>${request.consumerId}</td>
+                        <td>${request.name}</td>
+                        <td>${request.phone}</td>
+                        <td>${request.address}</td>
+                        <td>${request.cylinderType}</td>
+                        <td>${request.status || "Pending"}</td> 
+                    `;
+                    requestTableBody.appendChild(row);
+                });
+            }
         });
-
     </script>
 </body>
-
 </html>
