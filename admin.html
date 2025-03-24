@@ -14,6 +14,7 @@
             <img src="image/prometeo flame logo-Photoroom.png">
             <div class="logotext">Gas <span style="color: #ed6a1c;">Agency</span></div>
         </div>
+
         <div id="navLinks">
             <a href="javascript:void(0);" id="registerBtn">Register</a>
         </div>
@@ -48,14 +49,46 @@
         const auth = getAuth(app);
         const firestore = getFirestore(app);
         const database = getDatabase();
+
+
+        // Ensure searchFunction is globally accessible
+        window.searchFunction = function () {
+            let input = document.getElementById("searchBar")?.value.toLowerCase().trim();
+            if (!input) {
+                document.querySelectorAll("table tbody tr").forEach(row => row.style.display = "");
+                document.querySelectorAll("table").forEach(table => table.style.display = "table");
+                return;
+            }
+
+            let tables = document.querySelectorAll(".message-table, .booking-table, .extra-booking-table");
+            tables.forEach(table => {
+                let rows = table.querySelectorAll("tbody tr");
+                let hasMatch = false;
+
+                rows.forEach(row => {
+                    let rowText = row.innerText.toLowerCase();
+                    if (rowText.includes(input)) {
+                        row.style.display = ""; // Show matching rows
+                        hasMatch = true;
+                    } else {
+                        row.style.display = "none"; // Hide non-matching rows
+                    }
+                });
+
+                table.style.display = hasMatch ? "table" : "none";
+            });
+        };
+
         document.addEventListener("DOMContentLoaded", () => {
             document.body.style.display = "none";
+
             onAuthStateChanged(auth, async (user) => {
                 if (!user) {
                     alert("Please log in first.");
                     window.location.href = "index.html";
                     return;
                 }
+
                 try {
                     // Fetch user role from Firestore
                     const userDoc = await getDocs(collection(firestore, "users"));
@@ -66,10 +99,18 @@
                         window.location.href = "dashboard.html";
                         return;
                     }
+
                     document.body.style.display = "block";
                     document.getElementById("userEmail").innerText = `Administrator: ${user.displayName || user.email}`;
 
                     updateNavLinks(userData.role);
+
+                    // Attach search function to input field
+                    const searchBar = document.getElementById("searchBar");
+                    if (searchBar) {
+                        searchBar.addEventListener("keyup", searchFunction);
+                    }
+
                 } catch (error) {
                     console.error("Error fetching user role:", error);
                     alert("An error occurred. Please try again.");
@@ -77,6 +118,8 @@
                 }
             });
         });
+
+
         function updateNavLinks(userRole) {
             const navLinks = document.getElementById("navLinks");
             if (!navLinks) return;
@@ -105,6 +148,10 @@
                 if (snapshot.exists()) {
                     const contacts = snapshot.val();
                     let tableHTML = `
+                     <div class="search-container">
+                        <input type="text" id="searchBar" placeholder="Search..." onkeyup="searchFunction()">
+                        <button id="searchBtn">🔍</button>
+                     </div>
                         <table class="message-table">
                             <tr>
                                 <th>Name</th>
@@ -136,7 +183,7 @@
         document.querySelector("#bookingbtn").addEventListener("click", async (event) => {
             event.preventDefault();
             const detailsSection = document.querySelector(".details");
-            detailsSection.innerHTML = "<p>Loading booking details...</p>";
+            detailsSection.innerHTML = "<p>Loading booking details...</p> ";
 
             try {
                 const bookingRef = ref(database, "bookings");
@@ -145,6 +192,11 @@
                 if (snapshot.exists()) {
                     const bookings = snapshot.val();
                     let tableHTML = `
+                    <div class="search-container">
+                        <input type="text" id="searchBar" placeholder="Search..." onkeyup="searchFunction()">
+                        <button id="searchBtn">🔍</button>
+                     </div>
+                    
                 <table class="booking-table" border="1" cellspacing="0" cellpadding="8">
                     <thead>
                         <tr>
@@ -194,6 +246,10 @@
                 if (snapshot.exists()) {
                     const extraRequests = snapshot.val();
                     let tableHTML = `
+                    <div class="search-container">
+                        <input type="text" id="searchBar" placeholder="Search..." onkeyup="searchFunction()">
+                        <button id="searchBtn">🔍</button>
+                     </div>
         <table class="extra-booking-table" border="1" cellspacing="0" cellpadding="8">
             <thead>
                 <tr>

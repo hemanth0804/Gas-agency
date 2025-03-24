@@ -183,3 +183,24 @@
     background-color: #fdc401;
     transform: scale(0.95);
 }
+.search-container {
+    display: flex;
+    align-items: center;
+}
+
+#searchBar {
+    padding: 5px;
+    font-size: 16px;
+    border: none;
+    border-radius: 5px;
+    margin-right: 5px;
+}
+
+#searchBtn {
+    background-color: #ed6a1c;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
+    border-radius: 5px;
+}
