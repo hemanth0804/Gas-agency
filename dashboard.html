@@ -63,7 +63,7 @@
 
     <!-- Booking Requests -->
     <div class="bookingrequests" id="bookingrequests">
-        <div class="heading">Booking Requests</div>
+        <div class="heading">Extra Booking Requests</div>
         <table id="requestTable">
             <thead>
                 <tr>
@@ -87,7 +87,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-auth.js";
-        import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-database.js";
+        import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-database.js";
     
         // Firebase Configuration
         const firebaseConfig = {
@@ -131,19 +131,45 @@
                                 gasIdInput.value = userData.gasId;
                                 gasIdInput.disabled = true;
                                 fetchBookings(userData.gasId);
-                                fetchBookingRequests(userData.gasId); // Pass gasId
+                                fetchBookingRequests(userData.gasId);
                             }
                             if (userData.phone) {
                                 phoneInput.value = userData.phone;
                                 phoneInput.disabled = true;
                             }
                             submitBtn.disabled = true;
+                        } else {
+                            submitBtn.disabled = false; // Enable submission for new users
                         }
                     } catch (error) {
                         console.error("Error fetching user data:", error);
                     }
                 } else {
                     window.location.href = "index.html";
+                }
+            });
+    
+            submitBtn.addEventListener("click", async () => {
+                const gasId = gasIdInput.value.trim();
+                const phone = phoneInput.value.trim();
+    
+                if (!gasId || !phone) {
+                    alert("Please enter both Gas ID and Phone Number.");
+                    return;
+                }
+    
+                try {
+                    const userRef = ref(database, `users/${currentUser.uid}`);
+                    await set(userRef, { gasId, phone });
+    
+                    gasIdInput.disabled = true;
+                    phoneInput.disabled = true;
+                    submitBtn.disabled = true;
+    
+                    alert("Details saved successfully!");
+                } catch (error) {
+                    console.error("Error saving data:", error);
+                    alert("Failed to save details. Please try again.");
                 }
             });
     
@@ -172,7 +198,7 @@
                     if (snapshot.exists()) {
                         requests = Object.entries(snapshot.val())
                             .map(([id, data]) => ({ id, ...data }))
-                            .filter(request => request.consumerId === gasId); // Filter by logged-in user's gasId
+                            .filter(request => request.consumerId === gasId);
                     }
     
                     displayBookingRequests(requests);
@@ -240,5 +266,6 @@
             }
         });
     </script>
+    
 </body>
 </html>
