@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="admin.css">
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="logo">
+            <img src="image/prometeo flame logo-Photoroom.png">
+            <div class="logotext">Gas <span style="color: #ed6a1c;">Agency</span></div>
+        </div>
+        <div id="navLinks">
+            <a href="javascript:void(0);" id="registerBtn">Register</a>
+        </div>
+    </nav>
+    <div class="container">
+        <p id="userEmail">Loading...</p>
+        <div class="abutton">
+            <a href="javascript:void(0);" id="messagesBtn">Messages</a>
+            <a href="javascript:void(0);" id="bookingbtn">Booking</a>
+            <a href="javascript:void(0);" id="extraCylinderBtn">Extra Cylinder Requests</a>
+        </div>
+        <div class="details" id="details">Click a button to load data</div>
+    </div>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-auth.js";
+        import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
+        import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-database.js";
+
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyC1bpgvaS42i2C7sibadQifyiKOXEHQGSY",
+            authDomain: "gas-agency-d745d.firebaseapp.com",
+            databaseURL: "https://gas-agency-d745d-default-rtdb.firebaseio.com",
+            projectId: "gas-agency-d745d",
+            storageBucket: "gas-agency-d745d.appspot.com",
+            messagingSenderId: "593463958008",
+            appId: "1:593463958008:web:9e3889a577a4172c149e0d"
+        };
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const firestore = getFirestore(app);
+        const database = getDatabase();
+        document.addEventListener("DOMContentLoaded", () => {
+            document.body.style.display = "none";
+            onAuthStateChanged(auth, async (user) => {
+                if (!user) {
+                    alert("Please log in first.");
+                    window.location.href = "index.html";
+                    return;
+                }
+                try {
+                    // Fetch user role from Firestore
+                    const userDoc = await getDocs(collection(firestore, "users"));
+                    const userData = userDoc.docs.find(doc => doc.id === user.uid)?.data();
+
+                    if (!userData || userData.role !== "admin") {
+                        alert("Unauthorized Access! Redirecting to Dashboard.");
+                        window.location.href = "dashboard.html";
+                        return;
+                    }
+                    document.body.style.display = "block";
+                    document.getElementById("userEmail").innerText = `Administrator: ${user.displayName || user.email}`;
+
+                    updateNavLinks(userData.role);
+                } catch (error) {
+                    console.error("Error fetching user role:", error);
+                    alert("An error occurred. Please try again.");
+                    window.location.href = "index.html";
+                }
+            });
+        });
+        function updateNavLinks(userRole) {
+            const navLinks = document.getElementById("navLinks");
+            if (!navLinks) return;
+
+            navLinks.innerHTML = `
+            <a href="admin.html">Dashboard</a>
+            <a href="javascript:void(0);" id="logoutBtn">Logout</a>`;
+            document.getElementById("logoutBtn")?.addEventListener("click", () => {
+                signOut(auth)
+                    .then(() => {
+                        alert("Logged out successfully!");
+                        sessionStorage.removeItem("userRole");
+                        location.reload();
+                    })
+                    .catch((error) => console.error("Logout Error:", error));
+            });
+        }
+        // Fetch Messages from Firestore and display them in table format
+        document.querySelector(".abutton a").addEventListener("click", async (event) => {
+            event.preventDefault();
+            const detailsSection = document.querySelector(".details");
+            detailsSection.innerHTML = "<p>Loading messages...</p>";
+            try {
+                const contactRef = ref(database, "contacts");
+                const snapshot = await get(contactRef);
+                if (snapshot.exists()) {
+                    const contacts = snapshot.val();
+                    let tableHTML = `
+                        <table class="message-table">
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Mobile Number</th>
+                                <th>Subject</th>
+                                <th>Message</th>
+                            </tr>`;
+                    Object.values(contacts).forEach(contact => {
+                        tableHTML += `
+                            <tr>
+                                <td>${contact.name}</td>
+                                <td>${contact.email}</td>
+                                <td>${contact.mobile || "N/A"}</td>
+                                <td>${contact.subject}</td>
+                                <td>${contact.message}</td>
+                            </tr>`;
+                    });
+                    tableHTML += `</table>`;
+                    detailsSection.innerHTML = tableHTML;
+                } else {
+                    detailsSection.innerHTML = "<p>No messages found.</p>";
+                }
+            } catch (error) {
+                console.error("Error fetching messages:", error);
+                detailsSection.innerHTML = "<p>Error loading messages.</p>";
+            }
+        });
+        document.querySelector("#bookingbtn").addEventListener("click", async (event) => {
+            event.preventDefault();
+            const detailsSection = document.querySelector(".details");
+            detailsSection.innerHTML = "<p>Loading booking details...</p>";
+
+            try {
+                const bookingRef = ref(database, "bookings");
+                const snapshot = await get(bookingRef);
+
+                if (snapshot.exists()) {
+                    const bookings = snapshot.val();
+                    let tableHTML = `
+                <table class="booking-table" border="1" cellspacing="0" cellpadding="8">
+                    <thead>
+                        <tr>
+                            <th>Consumer ID</th>
+                            <th>Name</th>
+                            <th>Phone</th>
+                            <th>Address</th>
+                            <th>Cylinder Type</th>
+                            <th>Timestamp</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+
+                    Object.values(bookings).forEach(booking => {
+                        tableHTML += `
+                    <tr>
+                        <td>${booking.consumerId || "N/A"}</td>
+                        <td>${booking.name || "N/A"}</td>
+                        <td>${booking.phone || "N/A"}</td>
+                        <td>${booking.address || "N/A"}</td>
+                        <td>${booking.cylinderType || "N/A"}</td>
+                        <td>${booking.timestamp ? new Date(booking.timestamp).toLocaleString() : "N/A"}</td>
+                    </tr>`;
+                    });
+
+                    tableHTML += `</tbody></table>`;
+                    detailsSection.innerHTML = tableHTML;
+                } else {
+                    detailsSection.innerHTML = "<p>No bookings found.</p>";
+                }
+            } catch (error) {
+                console.error("Error fetching booking details:", error);
+                detailsSection.innerHTML = "<p>Error loading bookings.</p>";
+            }
+        });
+        document.querySelector("#extraCylinderBtn").addEventListener("click", async (event) => {
+            event.preventDefault();
+            const detailsSection = document.querySelector(".details");
+            detailsSection.innerHTML = "<p>Loading extra booking requests...</p>";
+
+            try {
+                const extraBookingRef = ref(database, "extraBookingRequests");
+                const snapshot = await get(extraBookingRef);
+
+                if (snapshot.exists()) {
+                    const extraRequests = snapshot.val();
+                    let tableHTML = `
+        <table class="extra-booking-table" border="1" cellspacing="0" cellpadding="8">
+            <thead>
+                <tr>
+                    <th>Consumer ID</th>
+                    <th>Name</th>
+                    <th>Phone</th>
+                    <th>Address</th>
+                    <th>Requested Cylinders</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>`;
+
+                    Object.entries(extraRequests).forEach(([requestId, request]) => {
+                        tableHTML += `
+            <tr id="row-${requestId}">
+                <td>${request.consumerId || "N/A"}</td>
+                <td>${request.name || "N/A"}</td>
+                <td>${request.phone || "N/A"}</td>
+                <td>${request.address || "N/A"}</td>
+                <td>${request.cylinderType || "N/A"}</td>
+                <td id="status-${requestId}">${request.status || "Pending"}</td>
+                <td>
+                    <button onclick="updateRequestStatus('${requestId}', 'Accepted')">Accept</button>
+                    <button onclick="updateRequestStatus('${requestId}', 'Rejected')">Reject</button>
+                </td>
+            </tr>`;
+                    });
+
+                    tableHTML += `</tbody></table>`;
+                    detailsSection.innerHTML = tableHTML;
+                } else {
+                    detailsSection.innerHTML = "<p>No extra booking requests found.</p>";
+                }
+            } catch (error) {
+                console.error("Error fetching extra booking requests:", error);
+                detailsSection.innerHTML = "<p>Error loading extra booking requests.</p>";
+            }
+        });
+
+        // Function to update request status in Firebase
+        window.updateRequestStatus = async (requestId, status) => {
+            try {
+                const requestRef = ref(database, `extraBookingRequests/${requestId}/status`);
+                await set(requestRef, status);
+
+                // Update UI
+                document.getElementById(`status-${requestId}`).innerText = status;
+                alert(`Request ${status} successfully.`);
+            } catch (error) {
+                console.error(`Error updating status to ${status}:`, error);
+                alert("Failed to update request status.");
+            }
+        };
+
+    </script>
+</body>
+
+</html>

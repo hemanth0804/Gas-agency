@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="service.css">
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="logo">
+            <img src="image/prometeo flame logo-Photoroom.png">
+            <div class="logotext">Gas <span style="color: #ed6a1c;">Agency</span></div>
+        </div>
+        <div id="navLinks">
+            <a href="index.html">Home</a>
+            <a href="service.html">Services</a>
+            <a href="about.html">About</a>
+            <a href="dashboard.html">Dashboard</a>
+            <a href="javascript:void(0);" id="logoutBtn">Logout</a>
+        </div>
+    </nav>
+    <p class="user" id="userEmail">Loading...</p>
+    <p class="remaining-cylinders">Remaining Cylinders: <span id="remainingCylinders">Loading...</span></p>
+
+    <div class="container">
+        <h2>Book a Gas Cylinder</h2>
+        <form id="bookingForm">
+            <label for="consumerId">Consumer ID:</label>
+            <input type="number" id="consumerId" name="consumerId" required>
+
+            <label for="name">Full Name:</label>
+            <input type="text" id="name" name="name" required>
+
+            <label for="phone">Phone Number:</label>
+            <input type="tel" id="phone" name="phone" required>
+
+            <label for="address">Delivery Address:</label>
+            <textarea id="address" name="address" required></textarea>
+
+            <label for="cylinderType">Cylinder Type:</label>
+            <select id="cylinderType" name="cylinderType" required>
+                <option value="">Select Type</option>
+                <option value="domestic">Domestic</option>
+                <option value="commercial">Commercial</option>
+            </select>
+
+            <button type="submit">Book Now</button>
+        </form>
+    </div>
+
+    <footer>
+        <div class="contact">
+            <h2>Contact Us</h2>
+            <p>Call us at <strong>+91 943516 15152</strong></p>
+            <p>Email: <strong>support@gasagency.com</strong></p>
+        </div>
+        <div class="address">
+            <h2>Address</h2>
+            <p>123 Main Street, Near City Gas Depot, Hyderabad, Telangana - 500001, India</p>
+        </div>
+        <div class="flogo"><img
+                src="image/Home Use LPG Gas Cylinders PNG Images Pack Free Download _ Graficsea-Photoroom.png" /></div>
+        <div class="copy">&copy; 2025 Gas Agency. All Rights Reserved.</div>
+        <div class="logo">
+            <img src="image/prometeo flame logo-Photoroom.png">
+            <div class="logotext">Gas <span style="color: #ed6a1c;">Agency</span></div>
+        </div>
+    </footer>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
+        import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-auth.js";
+        import { getDatabase, ref, push, get, update } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyC1bpgvaS42i2C7sibadQifyiKOXEHQGSY",
+            authDomain: "gas-agency-d745d.firebaseapp.com",
+            databaseURL: "https://gas-agency-d745d-default-rtdb.firebaseio.com",
+            projectId: "gas-agency-d745d",
+            storageBucket: "gas-agency-d745d.appspot.com",
+            messagingSenderId: "593463958008",
+            appId: "1:593463958008:web:9e3889a577a4172c149e0d"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const database = getDatabase(app);
+
+        // Function to fetch and display remaining cylinders
+        async function updateRemainingCylinders(userId) {
+            const currentYear = new Date().getFullYear();
+            const userBookingRef = ref(database, `userBookings/${userId}/${currentYear}`);
+
+            try {
+                const snapshot = await get(userBookingRef);
+                let bookingCount = snapshot.exists() ? snapshot.val().count : 0;
+                let remaining = 12 - bookingCount;
+                document.getElementById("remainingCylinders").innerText = remaining;
+            } catch (error) {
+                console.error("Error fetching remaining cylinders:", error);
+                document.getElementById("remainingCylinders").innerText = "Error";
+            }
+        }
+
+        // Logout functionality
+        document.getElementById("logoutBtn").addEventListener("click", () => {
+            signOut(auth).then(() => {
+                alert("Logged out successfully!");
+                window.location.href = "index.html";
+            }).catch((error) => {
+                console.error("Logout Error:", error);
+            });
+        });
+        // Fetch user details from the database and auto-fill the form
+        async function fetchUserDetails(userId) {
+            const userRef = ref(database, `users/${userId}`);
+
+            try {
+                const snapshot = await get(userRef);
+                if (snapshot.exists()) {
+                    const userData = snapshot.val();
+                    document.getElementById("consumerId").value = userData.gasId || "";
+                    document.getElementById("name").value = userData.name || "";
+                    document.getElementById("phone").value = userData.phone || "";
+
+                    // Optionally, make the fields read-only
+                    document.getElementById("consumerId").readOnly = true;
+                    document.getElementById("phone").readOnly = true;
+                } else {
+                    console.log("No user data found.");
+                }
+            } catch (error) {
+                console.error("Error fetching user details:", error);
+            }
+        }
+
+        // Authentication State Check
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                document.getElementById("userEmail").innerText = `User: ${user.email}`;
+                fetchUserDetails(user.uid); // Auto-fill form with user details
+                updateRemainingCylinders(user.uid); // Fetch remaining cylinders
+            } else {
+                window.location.href = "index.html";
+            }
+        });
+
+
+        // Booking Form Submission
+        document.getElementById("bookingForm").addEventListener("submit", async (event) => {
+            event.preventDefault();
+            const user = auth.currentUser;
+            if (!user) {
+                alert("Please log in first.");
+                return;
+            }
+
+            const userId = user.uid;
+            const consumerId = document.getElementById("consumerId").value.trim();
+            const name = document.getElementById("name").value.trim();
+            const phone = document.getElementById("phone").value.trim();
+            const address = document.getElementById("address").value.trim();
+            const cylinderType = document.getElementById("cylinderType").value;
+
+            if (!consumerId || !name || !phone || !address || !cylinderType) {
+                alert("Please fill all the fields before submitting.");
+                return;
+            }
+
+            const currentYear = new Date().getFullYear();
+            const userBookingRef = ref(database, `userBookings/${userId}/${currentYear}`);
+
+            try {
+                const snapshot = await get(userBookingRef);
+                let bookingCount = snapshot.exists() ? snapshot.val().count : 0;
+
+                if (bookingCount >= 12) {
+                    const requestRef = ref(database, "extraBookingRequests");
+                    await push(requestRef, {
+                        userId,
+                        consumerId,
+                        name,
+                        phone,
+                        address,
+                        cylinderType,
+                        timestamp: new Date().toISOString(),
+                        status: "pending"
+                    });
+                    alert("Booking limit reached. A request has been sent to the admin.");
+                    return;
+                }
+
+                // Proceed with booking
+                const bookingRef = ref(database, "bookings");
+                await push(bookingRef, {
+                    userId,
+                    consumerId,
+                    name,
+                    phone,
+                    address,
+                    cylinderType,
+                    timestamp: new Date().toISOString()
+                });
+
+                // Update booking count
+                await update(userBookingRef, { count: bookingCount + 1 });
+
+                alert("Booking Successful!");
+                document.getElementById("bookingForm").reset();
+                updateRemainingCylinders(userId); // Update remaining cylinders after booking
+            } catch (error) {
+                console.error("Booking Error:", error);
+            }
+        });
+
+    </script>
+
+
+</body>
+
+</html>

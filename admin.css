@@ -1,0 +1,185 @@
+.navbar {
+    background: #03186b;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 30px;
+}
+
+.navbar a {
+    color: white;
+    text-decoration: none;
+    margin: 0 10px;
+    font-weight: bold;
+    font-size: 18px;
+}
+
+.navbar a:hover {
+    text-decoration: underline;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+}
+
+.logo img {
+    height: 35px;
+    width: auto;
+    margin-right: 10px;
+}
+
+.logotext {
+    font-weight: bold;
+    font-size: 20px;
+    color: #fdc401;
+}
+
+.container {
+    width: 100%;
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: auto auto;
+    grid-template-rows: 80px auto;
+}
+
+.container .abutton {
+    text-align: right;
+    margin-top: 20px;
+    padding: 10px;
+}
+
+.container p {
+    padding: 10px;
+    font-weight: bold;
+}
+
+.container .details {
+    padding: 10px;
+    grid-column: 1/span 2;
+}
+
+.details {
+    padding: 10px;
+    border: 1px solid #ccc;
+    background: #f9f9f9;
+    min-height: 50px;
+    margin-top: 20px;
+}
+
+.message-box {
+    padding: 10px;
+    background: #fff;
+    border: 1px solid #ddd;
+    margin-bottom: 10px;
+}
+
+.message-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.message-table th,
+.message-table td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: left;
+}
+
+.message-table th {
+    background-color: #f4f4f4;
+}
+
+.booking-box {
+    padding: 10px;
+    background: #fff;
+    border: 1px solid #ddd;
+    margin-bottom: 10px;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.booking-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.booking-table th,
+.booking-table td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: left;
+}
+
+.booking-table th {
+    background-color: #f4f4f4;
+}
+
+.booking-table tbody tr:nth-child(even) {
+    background-color: #fafafa;
+}
+
+.booking-table tbody tr:hover {
+    background-color: #f9f9f9;
+}
+
+.extra-booking-box {
+    padding: 10px;
+    background: #fff;
+    border: 1px solid #ddd;
+    margin-bottom: 10px;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.extra-booking-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.extra-booking-table th,
+.extra-booking-table td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: left;
+}
+
+.extra-booking-table th {
+    background-color: #f4f4f4;
+}
+
+.extra-booking-table tbody tr:nth-child(even) {
+    background-color: #fafafa;
+}
+
+.extra-booking-table tbody tr:hover {
+    background-color: #f9f9f9;
+}
+
+.abutton {
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.abutton a {
+    text-decoration: none;
+    background-color: #ed6a1c;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-weight: bold;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.abutton a:hover {
+    background-color: #fdc401;
+    transform: scale(1.05);
+}
+
+.abutton a:active {
+    background-color: #fdc401;
+    transform: scale(0.95);
+}

@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="dashboard.css">
+</head>
+
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="logo">
+            <img src="image/prometeo flame logo-Photoroom.png">
+            <div class="logotext">Gas <span style="color: #ed6a1c;">Agency</span></div>
+        </div>
+        <div id="navLinks">
+            <a href="index.html">Home</a>
+            <a href="service.html">Services</a>
+            <a href="about.html">About</a>
+            <a href="dashboard.html">Dashboard</a>
+            <a href="javascript:void(0);" id="logoutBtn">Logout</a>
+        </div>
+    </nav>
+
+    <!-- User Info & Input Form -->
+    <div class="container">
+        <div class="username">
+            <img src="image/profile.png">
+            <p id="userEmail">Loading...</p>
+        </div>
+        <div class="gasid">
+            Gas ID: <input type="text" id="gasIdInput" required>
+        </div>
+        <div class="mobile">
+            Mobile Number: <input type="tel" id="phoneInput" required>
+        </div>
+        <button class="detail" id="submitBtn">Submit</button>
+    </div>
+
+    <!-- Booking History -->
+    <div class="bookinghistory" id="bookinghistory">
+        <div class="heading">Booking History</div>
+        <table id="historyTable">
+            <thead>
+                <tr>
+                    <th>Consumer ID</th>
+                    <th>Name</th>
+                    <th>Phone</th>
+                    <th>Address</th>
+                    <th>Cylinder Type</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td colspan="7">Loading...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    
+
+    <!-- Firebase Script -->
+    <script type="module">
+        // Import Firebase Modules
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-auth.js";
+        import { getDatabase, ref, update, get } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-database.js";
+
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyC1bpgvaS42i2C7sibadQifyiKOXEHQGSY",
+            authDomain: "gas-agency-d745d.firebaseapp.com",
+            databaseURL: "https://gas-agency-d745d-default-rtdb.firebaseio.com",
+            projectId: "gas-agency-d745d",
+            storageBucket: "gas-agency-d745d.appspot.com",
+            messagingSenderId: "593463958008",
+            appId: "1:593463958008:web:9e3889a577a4172c149e0d"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const database = getDatabase(app);
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const gasIdInput = document.getElementById("gasIdInput");
+            const phoneInput = document.getElementById("phoneInput");
+            const submitBtn = document.getElementById("submitBtn");
+            const logoutBtn = document.getElementById("logoutBtn");
+            const userEmailDisplay = document.getElementById("userEmail");
+            const historyTableBody = document.querySelector("#historyTable tbody");
+
+            let currentUser = null;
+
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    currentUser = user;
+                    userEmailDisplay.innerText = user.displayName || user.email;
+
+                    try {
+                        const userRef = ref(database, `users/${user.uid}`);
+                        const snapshot = await get(userRef);
+
+                        if (snapshot.exists()) {
+                            const userData = snapshot.val();
+                            if (userData.gasId) {
+                                gasIdInput.value = userData.gasId;
+                                gasIdInput.disabled = true;
+                                fetchBookings(userData.gasId);
+                            }
+                            if (userData.phone) {
+                                phoneInput.value = userData.phone;
+                                phoneInput.disabled = true;
+                            }
+                            submitBtn.disabled = true;
+                        }
+                    } catch (error) {
+                        console.error("Error fetching user data:", error);
+                    }
+                } else {
+                    window.location.href = "index.html";
+                }
+            });
+
+            async function fetchBookings(gasId) {
+                try {
+                    const bookingsRef = ref(database, "bookings");
+                    const snapshot = await get(bookingsRef);
+
+                    if (!snapshot.exists()) {
+                        historyTableBody.innerHTML = "<tr><td colspan='6'>No bookings found</td></tr>";
+                        return;
+                    }
+
+                    const bookingsData = snapshot.val();
+                    const userBookings = Object.values(bookingsData).filter(booking => booking.consumerId === gasId);
+
+                    displayBookingHistory(userBookings);
+                } catch (error) {
+                    console.error("Error fetching booking history:", error);
+                }
+            }
+
+            function displayBookingHistory(bookings) {
+                historyTableBody.innerHTML = "";
+                if (bookings.length === 0) {
+                    historyTableBody.innerHTML = "<tr><td colspan='6'>No bookings found</td></tr>";
+                    return;
+                }
+                bookings.forEach(booking => {
+                    const row = document.createElement("tr");
+                    row.innerHTML = `
+                <td>${booking.consumerId || "N/A"}</td>
+                <td>${booking.name || "N/A"}</td>
+                <td>${booking.phone || "N/A"}</td>
+                <td>${booking.address || "N/A"}</td>
+                <td>${booking.cylinderType || "N/A"}</td>
+                <td>${booking.timestamp ? new Date(booking.timestamp).toLocaleString() : "N/A"}</td>
+            `;
+                    historyTableBody.appendChild(row);
+                });
+            }
+
+            submitBtn.addEventListener("click", () => {
+                if (currentUser) {
+                    const gasId = gasIdInput.value.trim();
+                    const phone = phoneInput.value.trim();
+
+                    if (!gasId || !phone) {
+                        alert("Please fill in both fields.");
+                        return;
+                    }
+
+                    update(ref(database, `users/${currentUser.uid}`), { gasId, phone })
+                        .then(() => {
+                            alert("Details saved successfully!");
+                            gasIdInput.disabled = true;
+                            phoneInput.disabled = true;
+                            submitBtn.disabled = true;
+                            fetchBookings(gasId);
+                        })
+                        .catch(error => {
+                            console.error("Error saving data:", error);
+                            alert("Error saving data. Please try again.");
+                        });
+                }
+            });
+
+            logoutBtn.addEventListener("click", () => {
+                signOut(auth)
+                    .then(() => {
+                        alert("Logged out successfully!");
+                        window.location.href = "index.html";
+                    })
+                    .catch(error => {
+                        console.error("Logout Error:", error);
+                        alert("Error logging out. Please try again.");
+                    });
+            });
+        });
+
+    </script>
+</body>
+
+</html>
