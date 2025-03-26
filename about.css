@@ -164,3 +164,92 @@ footer .contact,.address{
     height: 35px;
     width: auto;
 }
+/* Responsive CSS for Mobile */
+@media screen and (max-width: 768px) {
+    .navbar {
+        flex-direction: column;
+        text-align: center;
+    
+    }
+
+    .navbar a {
+        margin: 5px;
+    }
+
+    .container {
+        width: 95%;
+        padding: 15px;
+    }
+
+    .text {
+        margin: 0 20px;
+    }
+
+    .text h1,
+    .text p {
+        text-align: center;
+    }
+
+    .contact-form {
+        width: 90%;
+        padding: 15px;
+    }
+
+    .input-group input,
+    .input-group textarea {
+        width: 100%;
+    }
+
+    button {
+        width: 100%;
+    }
+
+    .container-2 {
+        width: 100%;
+    }
+
+    /* Responsive Footer */
+    footer {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 10px;
+    }
+
+    footer .copy {
+        grid-column: auto;
+        text-align: center;
+        margin: 0;
+    }
+
+    footer .contact,
+    footer .address {
+        border-right: none;
+    }
+
+    .flogo img {
+        height: 100px;
+    }
+
+    .logotext {
+        font-size: 18px;
+        text-align: center;
+    }
+
+    .logo {
+        justify-content: center;
+        margin: 10px 0;
+    }
+
+    .logo img {
+        height: 30px;
+    }
+
+    .container img {
+        max-width: 100%;
+        height: auto;
+        display: block;
+        margin: 0 auto;
+    }
+}

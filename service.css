@@ -166,3 +166,28 @@ button:hover {
 .close-btn:hover {
     color: red;
 }
+@media (max-width: 768px) {
+    .navbar {
+        flex-direction: column;
+        text-align: center;
+    
+    }
+    .navbar a {
+        margin: 5px;
+    }
+    footer {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    footer .copy {
+        text-align: center;
+        margin: 10px 0;
+    }
+
+    footer .contact, .address {
+        border: none;
+    }
+}
