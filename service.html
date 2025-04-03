@@ -88,29 +88,16 @@
     </footer>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
-        import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-auth.js";
-        import { getDatabase, ref, push, get, update } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-database.js";
-    
-        const firebaseConfig = {
-            apiKey: "AIzaSyC1bpgvaS42i2C7sibadQifyiKOXEHQGSY",
-            authDomain: "gas-agency-d745d.firebaseapp.com",
-            databaseURL: "https://gas-agency-d745d-default-rtdb.firebaseio.com",
-            projectId: "gas-agency-d745d",
-            storageBucket: "gas-agency-d745d.appspot.com",
-            messagingSenderId: "593463958008",
-            appId: "1:593463958008:web:9e3889a577a4172c149e0d"
-        };
-    
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const database = getDatabase(app);
-    
+
+        import { auth, firestore, database } from "./firebase-config.js";
+        import { signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-auth.js";
+        import { ref, push, get, update } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-database.js";
+
         // Function to fetch and display remaining cylinders
         async function updateRemainingCylinders(userId) {
             const currentYear = new Date().getFullYear();
             const userBookingRef = ref(database, `userBookings/${userId}/${currentYear}`);
-    
+
             try {
                 const snapshot = await get(userBookingRef);
                 let bookingCount = snapshot.exists() ? snapshot.val().count : 0;
@@ -121,7 +108,7 @@
                 document.getElementById("remainingCylinders").innerText = "Error";
             }
         }
-    
+
         // Logout functionality
         document.getElementById("logoutBtn").addEventListener("click", () => {
             signOut(auth).then(() => {
@@ -131,11 +118,11 @@
                 console.error("Logout Error:", error);
             });
         });
-    
+
         // Fetch user details from the database and auto-fill the form
         async function fetchUserDetails(userId) {
             const userRef = ref(database, `users/${userId}`);
-    
+
             try {
                 const snapshot = await get(userRef);
                 if (snapshot.exists()) {
@@ -143,7 +130,7 @@
                     document.getElementById("consumerId").value = userData.gasId || "";
                     document.getElementById("name").value = userData.name || "";
                     document.getElementById("phone").value = userData.phone || "";
-    
+
                     // Optionally, make the fields read-only
                     document.getElementById("consumerId").readOnly = true;
                     document.getElementById("phone").readOnly = true;
@@ -154,7 +141,7 @@
                 console.error("Error fetching user details:", error);
             }
         }
-    
+
         // Authentication State Check
         onAuthStateChanged(auth, (user) => {
             if (user) {
@@ -165,7 +152,7 @@
                 window.location.href = "index.html";
             }
         });
-    
+
         // Payment method handling
         document.getElementById("paymentMethod").addEventListener("change", function () {
             const paymentMethod = this.value;
@@ -173,12 +160,12 @@
                 document.getElementById("qrPopup").style.display = "flex";
             }
         });
-    
+
         // Function to close QR popup
         function closePopup() {
             document.getElementById("qrPopup").style.display = "none";
         }
-    
+
         // Close popup when clicking outside it
         window.onclick = function (event) {
             let popup = document.getElementById("qrPopup");
@@ -186,7 +173,7 @@
                 popup.style.display = "none";
             }
         };
-    
+
         // Booking Form Submission
         document.getElementById("bookingForm").addEventListener("submit", async (event) => {
             event.preventDefault();
@@ -195,7 +182,7 @@
                 alert("Please log in first.");
                 return;
             }
-    
+
             const userId = user.uid;
             const consumerId = document.getElementById("consumerId").value.trim();
             const name = document.getElementById("name").value.trim();
@@ -203,19 +190,19 @@
             const address = document.getElementById("address").value.trim();
             const cylinderType = document.getElementById("cylinderType").value;
             const paymentMethod = document.getElementById("paymentMethod").value;
-    
+
             if (!consumerId || !name || !phone || !address || !cylinderType || !paymentMethod) {
                 alert("Please fill all the fields before submitting.");
                 return;
             }
-    
+
             const currentYear = new Date().getFullYear();
             const userBookingRef = ref(database, `userBookings/${userId}/${currentYear}`);
-    
+
             try {
                 const snapshot = await get(userBookingRef);
                 let bookingCount = snapshot.exists() ? snapshot.val().count : 0;
-    
+
                 if (bookingCount >= 12) {
                     const requestRef = ref(database, "extraBookingRequests");
                     await push(requestRef, {
@@ -232,7 +219,7 @@
                     alert("Booking limit reached. A request has been sent to the admin.");
                     return;
                 }
-    
+
                 // Proceed with booking
                 const bookingRef = ref(database, "bookings");
                 await push(bookingRef, {
@@ -245,10 +232,10 @@
                     paymentMethod,
                     timestamp: new Date().toISOString()
                 });
-    
+
                 // Update booking count
                 await update(userBookingRef, { count: bookingCount + 1 });
-    
+
                 alert("Booking Successful!");
                 document.getElementById("bookingForm").reset();
                 updateRemainingCylinders(userId); // Update remaining cylinders after booking
@@ -257,7 +244,7 @@
             }
         });
     </script>
-    
+
 
 
 </body>
